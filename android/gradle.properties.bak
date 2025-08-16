@@ -1,0 +1,11 @@
+org.gradle.jvmargs=-Xmx1024m -Dfile.encoding=UTF-8
+org.gradle.java.home=C:/Program Files/Eclipse Adoptium/jdk-17.0.16.8-hotspot
+android.useAndroidX=true
+android.enableJetifier=true
+
+# Paralellik ve Kotlin daemon bellek s?n?rlar?:
+org.gradle.workers.max=2
+kotlin.daemon.jvmargs=-Xms128m -Xmx512m -Dfile.encoding=UTF-8 -XX:-UseParallelGC
+
+# Kotlin derlemesini daemon yerine Gradle süreci içinde yap (daha az bellek):
+kotlin.compiler.execution.strategy=in-process
