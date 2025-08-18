@@ -1,3 +1,5 @@
+// lib/features/auth/presentation/login_controller.dart
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soundconnectmobile/features/auth/data/auth_repository.dart';
@@ -24,24 +26,10 @@ class LoginController extends StateNotifier<LoginState> {
 
   void clearError() => state = state.copyWith(error: null);
 
-  /// Kullanıcı adı / şifre ile giriş
   Future<bool> login(String username, String password) async {
     state = state.copyWith(loading: true, error: null);
     try {
       await _repo.login(username: username, password: password);
-      state = state.copyWith(loading: false);
-      return true;
-    } catch (e) {
-      state = state.copyWith(loading: false, error: _humanize(e));
-      return false;
-    }
-  }
-
-  /// Google ile giriş
-  Future<bool> googleSignIn(String idToken) async {
-    state = state.copyWith(loading: true, error: null);
-    try {
-      await _repo.googleSignIn(idToken);
       state = state.copyWith(loading: false);
       return true;
     } catch (e) {
@@ -58,7 +46,6 @@ class LoginController extends StateNotifier<LoginState> {
         case DioExceptionType.sendTimeout:
           return 'Bağlantı zaman aşımına uğradı';
         case DioExceptionType.badResponse:
-        // Backend BaseResponse.message varsa önce onu göster
           final msg = e.error?.toString();
           return (msg != null && msg.isNotEmpty) ? msg : 'İstek başarısız';
         case DioExceptionType.cancel:

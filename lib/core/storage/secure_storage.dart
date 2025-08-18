@@ -1,32 +1,30 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-const _kTokenKey = 'auth_token';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 final secureStorageProvider = Provider<SecureStorage>((ref) {
-  return SecureStorage();
+  final storage = const FlutterSecureStorage(); // const güvenli, opsiyonsuz kurulum
+  return SecureStorage(storage);
 });
 
 class SecureStorage {
-  // Android'de EncryptedSharedPreferences kullan
-  final FlutterSecureStorage _storage = const FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
-    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
-    mOptions: MacOsOptions(accessibility: KeychainAccessibility.first_unlock),
-    wOptions: WindowsOptions(), // default ok
-    lOptions: LinuxOptions(),   // default ok
-    webOptions: WebOptions(),   // web'de no-op
-  );
+  static const _kToken = 'auth_token';
+  static const _kPendingRegisterRole = 'pending_register_role';
 
-  Future<void> saveToken(String token) async {
-    await _storage.write(key: _kTokenKey, value: token);
-  }
+  final FlutterSecureStorage _storage;
+  const SecureStorage(this._storage);
 
-  Future<String?> getToken() async {
-    return _storage.read(key: _kTokenKey);
-  }
+  // --- TOKEN ---
+  Future<void> saveToken(String token) => _storage.write(key: _kToken, value: token);
+  Future<String?> getToken() => _storage.read(key: _kToken);
+  Future<void> clearToken() => _storage.delete(key: _kToken);
 
-  Future<void> clearToken() async {
-    await _storage.delete(key: _kTokenKey);
-  }
+  // --- REGISTER: seçilen rolü geçici sakla ---
+  Future<void> savePendingRegisterRole(String role) =>
+      _storage.write(key: _kPendingRegisterRole, value: role);
+
+  Future<String?> getPendingRegisterRole() =>
+      _storage.read(key: _kPendingRegisterRole);
+
+  Future<void> clearPendingRegisterRole() =>
+      _storage.delete(key: _kPendingRegisterRole);
 }

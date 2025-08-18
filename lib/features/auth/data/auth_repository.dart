@@ -1,45 +1,63 @@
+// lib/features/auth/data/auth_repository.dart
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:soundconnectmobile/core/network/dio_client.dart'; // << eklendi
 import 'package:soundconnectmobile/core/storage/secure_storage.dart';
 import 'package:soundconnectmobile/features/auth/data/auth_api.dart';
 import 'package:soundconnectmobile/features/auth/data/models/login_request.dart';
+import 'package:soundconnectmobile/features/auth/data/models/register_request.dart';
 
-/// DI: Repository provider
+/// DI
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   final api = ref.read(authApiProvider);
   final storage = ref.read(secureStorageProvider);
-  return AuthRepository(api: api, storage: storage);
+  return AuthRepository(ref: ref, api: api, storage: storage);
 });
 
-/// Auth veri erişim katmanı.
-/// - Network istekleri: AuthApi
-/// - Kalıcı token saklama: SecureStorage
 class AuthRepository {
+  final Ref ref;                     // << eklendi
   final AuthApi api;
   final SecureStorage storage;
 
-  AuthRepository({required this.api, required this.storage});
+  AuthRepository({required this.ref, required this.api, required this.storage});
 
-  /// Kullanıcı adı/şifre ile giriş.
-  /// Başarılı olursa dönen JWT token'ı kalıcı olarak saklar.
-  Future<void> login({
-    required String username,
-    required String password,
-  }) async {
+  /// Kullanıcı adı/şifre ile giriş → token kalıcı + RAM
+  Future<void> login({required String username, required String password}) async {
     final resp = await api.login(LoginRequest(username: username, password: password));
     await storage.saveToken(resp.token);
+    // RAM'de de tut ki BearerInterceptor header eklesin
+    ref.read(authTokenProvider.notifier).state = resp.token;
   }
 
-  /// Google ile giriş.
-  /// [idToken], Google Sign-In paketiyle elde edilen ID token’dır.
-  /// Başarılı olursa dönen JWT token'ı kalıcı olarak saklar.
-  Future<void> googleSignIn(String idToken) async {
-    final resp = await api.googleSignIn(idToken);
-    await storage.saveToken(resp.token);
+  /// Kayıt → OTP TTL & mailQueued dönüş bilgisini UI’ya ilet.
+  Future<Map<String, dynamic>> register({
+    required String username,
+    required String email,
+    required String password,
+    required String rePassword,
+    required String role,
+  }) async {
+    final req = RegisterRequest(
+      username: username,
+      email: email,
+      password: password,
+      rePassword: rePassword,
+      role: role,
+    );
+    return api.register(req);
   }
 
-  /// Saklanan JWT'yi oku (ör. splash yönlendirmesi, interceptor, vs.)
+  /// OTP doğrulama
+  Future<bool> verifyCode({required String email, required String code}) {
+    return api.verifyCode(email: email, code: code);
+  }
+
+  /// OTP yeniden gönder (cooldown bilgisiyle)
+  Future<Map<String, dynamic>> resendCode({required String email}) {
+    return api.resendCode(email: email);
+  }
+
+  /// Oturum yardımcıları
   Future<String?> getToken() => storage.getToken();
-
-  /// Çıkış (logout) için token'ı temizle.
   Future<void> clearToken() => storage.clearToken();
 }

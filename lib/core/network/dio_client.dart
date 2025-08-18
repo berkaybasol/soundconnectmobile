@@ -1,16 +1,11 @@
+// lib/core/network/dio_client.dart
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart'; // <-- debugPrint için
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 import '../../env/env.dart';
 
-/// Güvenli depolama (token burada tutulacak)
-final secureStorageProvider = Provider<FlutterSecureStorage>((ref) {
-  return const FlutterSecureStorage();
-});
-
-/// Basit token okuyucu provider (login sonrası buraya yazacağız)
+/// Basit token okuyucu (BearerInterceptor bunu kullanır)
 final authTokenProvider = StateProvider<String?>((ref) => null);
 
 /// Talker log
@@ -57,7 +52,7 @@ final dioProvider = Provider<Dio>((ref) {
     ),
   );
 
-  // <<<<<< DEBUG SATIRI: Çalışan BASE_URL’i logla
+  // DEBUG: Çalışan BASE_URL’i logla
   debugPrint('BASE_URL is: ${Env.baseUrl}');
 
   dio.interceptors.add(BearerInterceptor(ref, ref.read(talkerProvider)));
