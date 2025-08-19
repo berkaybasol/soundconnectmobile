@@ -1,21 +1,26 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'verify_code_controller.dart';
-import 'login_controller.dart';                         // auto-login
-import 'package:soundconnectmobile/core/network/dio_client.dart'; // dioProvider
+import 'login_controller.dart';
+import 'package:soundconnectmobile/core/network/dio_client.dart';
+
+// Onboarding sayfaları import et
+import 'package:soundconnectmobile/features/onboarding/musician_onboarding_page.dart';
+import 'package:soundconnectmobile/features/onboarding/listener_onboarding_page.dart';
+import 'package:soundconnectmobile/features/onboarding/organizer_onboarding_page.dart';
+import 'package:soundconnectmobile/features/onboarding/producer_onboarding_page.dart';
+import 'package:soundconnectmobile/features/onboarding/studio_onboarding_page.dart';
 
 class VerifyCodePage extends ConsumerStatefulWidget {
   final String email;
-  final int initialOtpTtlSeconds; // register dönüşünden gelir (opsiyonel)
-  final VoidCallback? onVerified;  // başarılı olunca yapılacak aksiyon (opsiyonel)
+  final int initialOtpTtlSeconds;
+  final VoidCallback? onVerified;
 
-  /// ROLE_VENUE ise RegisterPage’den gelen taslak (VenueApplicationDraft veya Map)
   final dynamic venueDraft;
-
-  /// Doğrulama sonrası otomatik giriş için
   final String? usernameForAutoLogin;
   final String? passwordForAutoLogin;
 
@@ -37,8 +42,8 @@ class _VerifyCodePageState extends ConsumerState<VerifyCodePage> {
   final _codeCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
-  bool _postFlowRan = false; // aynı işlemleri iki kez çalıştırmamak için
-  bool _busy = false;        // UI disable
+  bool _postFlowRan = false;
+  bool _busy = false;
 
   @override
   void initState() {
@@ -84,11 +89,6 @@ class _VerifyCodePageState extends ConsumerState<VerifyCodePage> {
         const SnackBar(content: Text('E-posta doğrulandı!')),
       );
       await _runPostVerifyFlow();
-      if (widget.onVerified != null) {
-        widget.onVerified!.call();
-      } else {
-        if (mounted) Navigator.of(context).maybePop();
-      }
     } else if (s.error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(s.error!)),
@@ -102,7 +102,8 @@ class _VerifyCodePageState extends ConsumerState<VerifyCodePage> {
     setState(() => _busy = true);
 
     try {
-      // 1) AUTO LOGIN (register’dan kimlik bilgileri geldiyse)
+      // 1) AUTO LOGIN
+      String? token;
       if ((widget.usernameForAutoLogin?.isNotEmpty ?? false) &&
           (widget.passwordForAutoLogin?.isNotEmpty ?? false)) {
         final ok = await ref
@@ -114,17 +115,19 @@ class _VerifyCodePageState extends ConsumerState<VerifyCodePage> {
             SnackBar(content: Text(ok ? 'Giriş yapıldı' : 'Giriş başarısız')),
           );
         }
+
+        // login başarılıysa token RAM'de authTokenProvider’da mevcut
+        token = ref.read(authTokenProvider);
       }
 
-      // 2) VENUE APPLICATION CREATE (taslak geldiyse)
+      // 2) VENUE APPLICATION CREATE
       if (widget.venueDraft != null) {
-        // draft -> Map (senkron)  // FIX: await kaldırıldı, güvenli dönüşüm
         Map<String, dynamic>? body;
         final draft = widget.venueDraft;
 
         try {
           final dynamic d = draft;
-          final maybe = d.toCreateBody(); // senkron bekleniyor
+          final maybe = d.toCreateBody();
           if (maybe is Map<String, dynamic>) {
             body = maybe;
           } else if (maybe is Map) {
@@ -157,6 +160,40 @@ class _VerifyCodePageState extends ConsumerState<VerifyCodePage> {
           }
         }
       }
+
+      // 3) ROLE’E GÖRE YÖNLENDİRME
+      if (token != null && mounted) {
+        final role = _extractRole(token);
+        if (role != null) {
+          switch (role) {
+            case "ROLE_MUSICIAN":
+              Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (_) => const MusicianOnboardingPage()));
+              break;
+            case "ROLE_LISTENER":
+              Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (_) => const ListenerOnboardingPage()));
+              break;
+            case "ROLE_ORGANIZER":
+              Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (_) => const OrganizerOnboardingPage()));
+              break;
+            case "ROLE_PRODUCER":
+              Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (_) => const ProducerOnboardingPage()));
+              break;
+            case "ROLE_STUDIO":
+              Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (_) => const StudioOnboardingPage()));
+              break;
+            case "ROLE_VENUE":
+            // Venue onboarding en son yapılacak
+            // Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const VenueOnboardingPage()));
+              break;
+          }
+        }
+      }
+
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -166,6 +203,21 @@ class _VerifyCodePageState extends ConsumerState<VerifyCodePage> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  /// JWT içinden "roles" alanını al
+  String? _extractRole(String token) {
+    try {
+      final parts = token.split(".");
+      if (parts.length != 3) return null;
+      final payload = utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
+      final map = json.decode(payload) as Map<String, dynamic>;
+      final roles = map["roles"];
+      if (roles is List && roles.isNotEmpty) {
+        return roles.first.toString();
+      }
+    } catch (_) {}
+    return null;
   }
 
   String _prettyError(Object e) {
@@ -234,14 +286,12 @@ class _VerifyCodePageState extends ConsumerState<VerifyCodePage> {
                         ),
                       const SizedBox(height: 16),
 
-                      // 6 haneli kod input
                       TextFormField(
                         controller: _codeCtrl,
                         maxLength: 6,
                         textAlign: TextAlign.center,
                         keyboardType: TextInputType.number,
                         inputFormatters: [
-                          // FIX: const kaldırıldı
                           FilteringTextInputFormatter.digitsOnly,
                           LengthLimitingTextInputFormatter(6),
                         ],
@@ -268,15 +318,13 @@ class _VerifyCodePageState extends ConsumerState<VerifyCodePage> {
                               ? const SizedBox(
                             width: 22,
                             height: 22,
-                            child:
-                            CircularProgressIndicator(strokeWidth: 2),
+                            child: CircularProgressIndicator(strokeWidth: 2),
                           )
                               : const Text('Doğrula'),
                         ),
                       ),
                       const SizedBox(height: 12),
 
-                      // Resend
                       if (s.cooldownSeconds > 0)
                         Text(
                           'Yeniden gönder için bekle: ${s.cooldownSeconds}s',
@@ -293,9 +341,7 @@ class _VerifyCodePageState extends ConsumerState<VerifyCodePage> {
                                 ? const SizedBox(
                               width: 18,
                               height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                              ),
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             )
                                 : const Text('Kodu yeniden gönder'),
                           ),
