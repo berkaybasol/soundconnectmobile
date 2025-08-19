@@ -1,20 +1,32 @@
-// lib/features/auth/presentation/verify_code_page.dart
-
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'verify_code_controller.dart';
+import 'login_controller.dart';                         // auto-login
+import 'package:soundconnectmobile/core/network/dio_client.dart'; // dioProvider
 
 class VerifyCodePage extends ConsumerStatefulWidget {
   final String email;
   final int initialOtpTtlSeconds; // register dönüşünden gelir (opsiyonel)
-  final VoidCallback? onVerified; // başarılı olunca yapılacak aksiyon (opsiyonel)
+  final VoidCallback? onVerified;  // başarılı olunca yapılacak aksiyon (opsiyonel)
+
+  /// ROLE_VENUE ise RegisterPage’den gelen taslak (VenueApplicationDraft veya Map)
+  final dynamic venueDraft;
+
+  /// Doğrulama sonrası otomatik giriş için
+  final String? usernameForAutoLogin;
+  final String? passwordForAutoLogin;
 
   const VerifyCodePage({
     super.key,
     required this.email,
     this.initialOtpTtlSeconds = 0,
     this.onVerified,
+    this.venueDraft,
+    this.usernameForAutoLogin,
+    this.passwordForAutoLogin,
   });
 
   @override
@@ -24,6 +36,9 @@ class VerifyCodePage extends ConsumerStatefulWidget {
 class _VerifyCodePageState extends ConsumerState<VerifyCodePage> {
   final _codeCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+
+  bool _postFlowRan = false; // aynı işlemleri iki kez çalıştırmamak için
+  bool _busy = false;        // UI disable
 
   @override
   void initState() {
@@ -68,16 +83,100 @@ class _VerifyCodePageState extends ConsumerState<VerifyCodePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('E-posta doğrulandı!')),
       );
+      await _runPostVerifyFlow();
       if (widget.onVerified != null) {
         widget.onVerified!.call();
       } else {
-        Navigator.of(context).maybePop();
+        if (mounted) Navigator.of(context).maybePop();
       }
     } else if (s.error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(s.error!)),
       );
     }
+  }
+
+  Future<void> _runPostVerifyFlow() async {
+    if (_postFlowRan) return;
+    _postFlowRan = true;
+    setState(() => _busy = true);
+
+    try {
+      // 1) AUTO LOGIN (register’dan kimlik bilgileri geldiyse)
+      if ((widget.usernameForAutoLogin?.isNotEmpty ?? false) &&
+          (widget.passwordForAutoLogin?.isNotEmpty ?? false)) {
+        final ok = await ref
+            .read(loginControllerProvider.notifier)
+            .login(widget.usernameForAutoLogin!, widget.passwordForAutoLogin!);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(ok ? 'Giriş yapıldı' : 'Giriş başarısız')),
+          );
+        }
+      }
+
+      // 2) VENUE APPLICATION CREATE (taslak geldiyse)
+      if (widget.venueDraft != null) {
+        // draft -> Map (senkron)  // FIX: await kaldırıldı, güvenli dönüşüm
+        Map<String, dynamic>? body;
+        final draft = widget.venueDraft;
+
+        try {
+          final dynamic d = draft;
+          final maybe = d.toCreateBody(); // senkron bekleniyor
+          if (maybe is Map<String, dynamic>) {
+            body = maybe;
+          } else if (maybe is Map) {
+            body = Map<String, dynamic>.from(maybe);
+          }
+        } catch (_) {
+          if (draft is Map<String, dynamic>) {
+            body = draft;
+          } else if (draft is Map) {
+            body = draft.map((k, v) => MapEntry(k.toString(), v));
+          }
+        }
+
+        if (body != null) {
+          final dio = ref.read(dioProvider);
+          final res = await dio.post(
+            '/api/v1/user/venue-applications/create',
+            data: body,
+          );
+          final ok = (res.data is Map) && (res.data['success'] == true);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(ok
+                    ? 'Mekan başvurun alındı 🎉'
+                    : (res.data?['message']?.toString() ??
+                    'Başvuru sırasında bir sorun oluştu')),
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_prettyError(e))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  String _prettyError(Object e) {
+    if (e is DioException) {
+      final data = e.response?.data;
+      final msg = (data is Map && data['message'] != null)
+          ? data['message'].toString()
+          : e.message;
+      return msg ?? 'İşlem sırasında bir hata oluştu';
+    }
+    return e.toString();
   }
 
   Future<void> _onResend() async {
@@ -104,7 +203,8 @@ class _VerifyCodePageState extends ConsumerState<VerifyCodePage> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    final canResend = s.cooldownSeconds <= 0 && !s.resending && !s.verifying;
+    final canResend =
+        s.cooldownSeconds <= 0 && !s.resending && !s.verifying && !_busy;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Doğrulama Kodu')),
@@ -141,6 +241,7 @@ class _VerifyCodePageState extends ConsumerState<VerifyCodePage> {
                         textAlign: TextAlign.center,
                         keyboardType: TextInputType.number,
                         inputFormatters: [
+                          // FIX: const kaldırıldı
                           FilteringTextInputFormatter.digitsOnly,
                           LengthLimitingTextInputFormatter(6),
                         ],
@@ -155,19 +256,20 @@ class _VerifyCodePageState extends ConsumerState<VerifyCodePage> {
                           }
                           return null;
                         },
-                        enabled: !s.verifying,
+                        enabled: !s.verifying && !_busy,
                       ),
                       const SizedBox(height: 12),
 
                       SizedBox(
                         height: 48,
                         child: FilledButton(
-                          onPressed: s.verifying ? null : _onVerify,
-                          child: s.verifying
+                          onPressed: (s.verifying || _busy) ? null : _onVerify,
+                          child: (s.verifying || _busy)
                               ? const SizedBox(
                             width: 22,
                             height: 22,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child:
+                            CircularProgressIndicator(strokeWidth: 2),
                           )
                               : const Text('Doğrula'),
                         ),
@@ -191,7 +293,9 @@ class _VerifyCodePageState extends ConsumerState<VerifyCodePage> {
                                 ? const SizedBox(
                               width: 18,
                               height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
                             )
                                 : const Text('Kodu yeniden gönder'),
                           ),
@@ -201,8 +305,10 @@ class _VerifyCodePageState extends ConsumerState<VerifyCodePage> {
                         const SizedBox(height: 12),
                         Text(
                           s.error!,
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(color: cs.error, fontWeight: FontWeight.w600),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: cs.error,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ],

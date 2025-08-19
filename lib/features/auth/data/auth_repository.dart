@@ -1,7 +1,5 @@
-// lib/features/auth/data/auth_repository.dart
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:soundconnectmobile/core/network/dio_client.dart'; // << eklendi
+import 'package:soundconnectmobile/core/network/dio_client.dart'; // authTokenProvider
 import 'package:soundconnectmobile/core/storage/secure_storage.dart';
 import 'package:soundconnectmobile/features/auth/data/auth_api.dart';
 import 'package:soundconnectmobile/features/auth/data/models/login_request.dart';
@@ -15,7 +13,7 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 });
 
 class AuthRepository {
-  final Ref ref;                     // << eklendi
+  final Ref ref;
   final AuthApi api;
   final SecureStorage storage;
 
@@ -23,7 +21,8 @@ class AuthRepository {
 
   /// Kullanıcı adı/şifre ile giriş → token kalıcı + RAM
   Future<void> login({required String username, required String password}) async {
-    final resp = await api.login(LoginRequest(username: username, password: password));
+    final resp =
+    await api.login(LoginRequest(username: username, password: password));
     await storage.saveToken(resp.token);
     // RAM'de de tut ki BearerInterceptor header eklesin
     ref.read(authTokenProvider.notifier).state = resp.token;

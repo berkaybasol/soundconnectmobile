@@ -1,5 +1,3 @@
-// lib/features/auth/presentation/login_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'login_controller.dart';
@@ -52,6 +50,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
   }
 
+  // Google butonu için placeholder
+  void _onGoogleTodo() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Google ile giriş yakında (TODO)')),
+    );
+  }
+
+  // Şifre sıfırlama için placeholder
+  void _onForgotPasswordTodo() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Şifre sıfırlama yakında 🐟')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(loginControllerProvider);
@@ -91,6 +103,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                       const SizedBox(height: 15),
 
+                      // Kullanıcı adı
                       TextFormField(
                         controller: _username,
                         focusNode: _usernameFocus,
@@ -104,8 +117,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           border: fieldBorder,
                           enabledBorder: fieldBorder,
                           focusedBorder: fieldFocused,
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 14),
+                          contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                         ),
                         validator: (v) =>
                         (v == null || v.trim().isEmpty) ? 'Zorunlu' : null,
@@ -115,6 +128,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                       const SizedBox(height: 12),
 
+                      // Şifre
                       TextFormField(
                         controller: _password,
                         focusNode: _passwordFocus,
@@ -140,22 +154,43 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           border: fieldBorder,
                           enabledBorder: fieldBorder,
                           focusedBorder: fieldFocused,
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 14),
+                          contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                         ),
-                        validator: (v) =>
-                        (v == null || v.isEmpty) ? 'Zorunlu' : null,
+                        validator: (v) => (v == null || v.isEmpty) ? 'Zorunlu' : null,
                         onFieldSubmitted: (_) => _onLogin(),
                       ),
 
-                      const SizedBox(height: 16),
+                      // Şifreni mi unuttun? + balık (assets/icons/fish.png)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: state.loading ? null : _onForgotPasswordTodo,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Image.asset(
+                                'assets/icons/fish.png',             // ← düzeltildi
+                                width: 18,
+                                height: 18,
+                                errorBuilder: (_, __, ___) =>
+                                const Text('🐟', style: TextStyle(fontSize: 16)),
+                              ),
+                              const SizedBox(width: 6),
+                              const Text('Şifreni mi unuttun?'),
+                            ],
+                          ),
+                        ),
+                      ),
 
+                      const SizedBox(height: 8),
+
+                      // Giriş yap
                       SizedBox(
                         height: 52,
                         child: FilledButton(
                           style: ButtonStyle(
-                            backgroundColor:
-                            WidgetStatePropertyAll(cs.onSurface),
+                            backgroundColor: WidgetStatePropertyAll(cs.onSurface),
                             foregroundColor:
                             const WidgetStatePropertyAll(Colors.white),
                             shape: WidgetStatePropertyAll(
@@ -175,6 +210,25 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 strokeWidth: 2, color: Colors.white),
                           )
                               : const Text('Giriş yap'),
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // Google ile devam et (assets/icons/google.png)
+                      SizedBox(
+                        height: 48,
+                        child: OutlinedButton.icon(
+                          onPressed: state.loading ? null : _onGoogleTodo,
+                          icon: Image.asset(
+                            'assets/icons/google.png',              // ← düzeltildi
+                            width: 18,
+                            height: 18,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) =>
+                            const Icon(Icons.login, size: 18),
+                          ),
+                          label: const Text('Google ile devam et'),
                         ),
                       ),
 
