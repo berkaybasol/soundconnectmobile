@@ -2,8 +2,10 @@
 
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:soundconnectmobile/core/network/dio_client.dart';
-import 'package:soundconnectmobile/env/env.dart';
+import 'package:soundconnectmobile/core/network/api_paths.dart';
+
 import 'package:soundconnectmobile/features/auth/data/models/login_request.dart';
 import 'package:soundconnectmobile/features/auth/data/models/login_response.dart';
 import 'package:soundconnectmobile/features/auth/data/models/register_request.dart';
@@ -18,20 +20,18 @@ class AuthApi {
   final Dio _dio;
   AuthApi(this._dio);
 
-  static String get _base => '${Env.baseUrl}/api/v1/auth';
-
   /// POST /api/v1/auth/login  -> { success, data: { token } }
   Future<LoginResponse> login(LoginRequest req) async {
-    final res = await _dio.post('$_base/login', data: req.toJson());
+    final res = await _dio.post(ApiPaths.login, data: req.toJson());
     final body = _asMap(res.data);
     _ensureSuccess(res, body);
     final data = _asMap(body['data']);
     return LoginResponse.fromJson(data);
   }
 
-  /// (Opsiyonel) Google giriş endpoint’iniz devam ediyorsa bırakıyoruz.
+  /// (Opsiyonel) Google giriş endpoint’iniz devam ediyorsa:
   Future<LoginResponse> googleSignIn(String idToken) async {
-    final res = await _dio.post('$_base/google-sign-in', data: {'idToken': idToken});
+    final res = await _dio.post(ApiPaths.googleSignIn, data: {'idToken': idToken});
     final body = _asMap(res.data);
     _ensureSuccess(res, body);
     final data = _asMap(body['data']);
@@ -42,7 +42,7 @@ class AuthApi {
   /// -> { success, data: { email, status, otpTtlSeconds, mailQueued } }
   /// Flutter tarafında VerifyCodePage’e taşıyabilmek için data map’ini döndürüyoruz.
   Future<Map<String, dynamic>> register(RegisterRequest req) async {
-    final res = await _dio.post('$_base/register', data: req.toJson());
+    final res = await _dio.post(ApiPaths.register, data: req.toJson());
     final body = _asMap(res.data);
     _ensureSuccess(res, body);
     final data = _asMap(body['data']);
@@ -51,7 +51,6 @@ class AuthApi {
       'status': data['status'],
       'otpTtlSeconds': data['otpTtlSeconds'],
       'mailQueued': data['mailQueued'],
-      // İstersen body['message']’ı da ilet:
       'message': body['message'],
       'code': body['code'],
       'success': body['success'] == true,
@@ -62,12 +61,12 @@ class AuthApi {
   /// body: { email, code }  -> { success, data:null }
   /// Başarılıysa true döner; hata durumunda DioException fırlatır.
   Future<bool> verifyCode({required String email, required String code}) async {
-    final res = await _dio.post('$_base/verify-code', data: {
+    final res = await _dio.post(ApiPaths.verifyCode, data: {
       'email': email,
       'code': code,
     });
     final body = _asMap(res.data);
-    _ensureSuccess(res, body); // başarısızsa hata fırlatır
+    _ensureSuccess(res, body);
     return body['success'] == true;
   }
 
@@ -76,7 +75,7 @@ class AuthApi {
   /// success=false ve code=429 olsa bile HTTP 200 gelebilir (rate limit semantiği).
   /// Bu yüzden _ensureSuccess ÇAĞIRMAYIP tüm gövdeyi döndürüyoruz.
   Future<Map<String, dynamic>> resendCode({required String email}) async {
-    final res = await _dio.post('$_base/resend-code', data: {
+    final res = await _dio.post(ApiPaths.resendCode, data: {
       'email': email,
     });
     final body = _asMap(res.data);
@@ -98,7 +97,7 @@ class AuthApi {
     if (v is Map<String, dynamic>) return v;
     if (v is Map) return v.map((k, val) => MapEntry(k.toString(), val));
     throw DioException(
-      requestOptions: RequestOptions(path: '$_base/*'),
+      requestOptions: RequestOptions(path: ApiPaths.authBase),
       error: 'Unexpected response shape',
       type: DioExceptionType.badResponse,
     );
