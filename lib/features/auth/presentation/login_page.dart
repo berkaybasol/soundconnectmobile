@@ -1,3 +1,4 @@
+// lib/features/auth/presentation/login_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'login_controller.dart';
@@ -41,7 +42,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     if (ok) {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Giriş başarılı')));
-      // TODO: Router entegrasyonunda ana sayfaya yönlendir.
+      // Profil/çağıran sayfaya geri dön
+      Navigator.of(context).pop(true); // ← kritik satır
+      // Router kullanacaksan:
       // context.go('/home');
     } else if (s.error != null) {
       ScaffoldMessenger.of(context)
@@ -50,14 +53,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
   }
 
-  // Google butonu için placeholder
   void _onGoogleTodo() {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Google ile giriş yakında (TODO)')),
     );
   }
 
-  // Şifre sıfırlama için placeholder
   void _onForgotPasswordTodo() {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Şifre sıfırlama yakında 🐟')),
@@ -161,7 +162,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         onFieldSubmitted: (_) => _onLogin(),
                       ),
 
-                      // Şifreni mi unuttun? + balık (assets/icons/fish.png)
+                      // Şifremi unuttum
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
@@ -170,7 +171,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Image.asset(
-                                'assets/icons/fish.png',             // ← düzeltildi
+                                'assets/icons/fish.png',
                                 width: 18,
                                 height: 18,
                                 errorBuilder: (_, __, ___) =>
@@ -215,13 +216,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                       const SizedBox(height: 12),
 
-                      // Google ile devam et (assets/icons/google.png)
+                      // Google ile devam et
                       SizedBox(
                         height: 48,
                         child: OutlinedButton.icon(
                           onPressed: state.loading ? null : _onGoogleTodo,
                           icon: Image.asset(
-                            'assets/icons/google.png',              // ← düzeltildi
+                            'assets/icons/google.png',
                             width: 18,
                             height: 18,
                             fit: BoxFit.contain,
