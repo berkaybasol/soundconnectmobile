@@ -1,8 +1,8 @@
 // lib/features/auth/presentation/verify_code_controller.dart
-
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dio/dio.dart';
+
+import 'package:soundconnectmobile/core/error/ui_error_mapper.dart';
 import 'package:soundconnectmobile/features/auth/data/auth_api.dart';
 
 class VerifyCodeState {
@@ -59,7 +59,7 @@ class VerifyCodeController extends StateNotifier<VerifyCodeState> {
 
   VerifyCodeController(this._api) : super(const VerifyCodeState());
 
-  /// İstersen sayfa açılışında state’i temizlemek için çağır.
+  /// Sayfa açılışında state’i temizlemek istersen çağır.
   void reset() {
     _stopTimers();
     state = const VerifyCodeState();
@@ -95,8 +95,8 @@ class VerifyCodeController extends StateNotifier<VerifyCodeState> {
     } catch (e) {
       state = state.copyWith(
         verifying: false,
-        verified: false, // <-- kritik fix
-        error: _humanize(e),
+        verified: false, // kritik: hatada da false
+        error: UiErrorMapper.humanize(e),
       );
     }
   }
@@ -133,7 +133,7 @@ class VerifyCodeController extends StateNotifier<VerifyCodeState> {
       state = state.copyWith(
         resending: false,
         verified: false,
-        error: _humanize(e),
+        error: UiErrorMapper.humanize(e),
       );
     }
   }
@@ -179,25 +179,5 @@ class VerifyCodeController extends StateNotifier<VerifyCodeState> {
   void dispose() {
     _stopTimers();
     super.dispose();
-  }
-
-  String _humanize(Object e) {
-    if (e is DioException) {
-      switch (e.type) {
-        case DioExceptionType.connectionTimeout:
-        case DioExceptionType.receiveTimeout:
-        case DioExceptionType.sendTimeout:
-          return 'Bağlantı zaman aşımına uğradı';
-        case DioExceptionType.badResponse:
-          final msg = e.error?.toString();
-          return (msg != null && msg.isNotEmpty) ? msg : 'İstek başarısız';
-        case DioExceptionType.cancel:
-          return 'İstek iptal edildi';
-        case DioExceptionType.unknown:
-        default:
-          return 'Ağ hatası';
-      }
-    }
-    return e.toString();
   }
 }

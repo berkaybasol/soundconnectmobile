@@ -1,9 +1,12 @@
+// lib/features/auth/data/auth_repository.dart
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:soundconnectmobile/core/network/dio_client.dart'; // authTokenProvider
 import 'package:soundconnectmobile/core/storage/secure_storage.dart';
 import 'package:soundconnectmobile/features/auth/data/auth_api.dart';
-import 'package:soundconnectmobile/features/auth/data/models/login_request.dart';
-import 'package:soundconnectmobile/features/auth/data/models/register_request.dart';
+import 'package:soundconnectmobile/features/auth/data/models/requests/login_request.dart';
+import 'package:soundconnectmobile/features/auth/data/models/requests/register_request.dart';
 
 /// DI
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
@@ -17,18 +20,33 @@ class AuthRepository {
   final AuthApi api;
   final SecureStorage storage;
 
-  AuthRepository({required this.ref, required this.api, required this.storage});
+  AuthRepository({
+    required this.ref,
+    required this.api,
+    required this.storage,
+  });
+
+  /// App açılışında storage’taki token’ı RAM’e yükle (BearerInterceptor için).
+  Future<void> hydrateTokenFromStorage() async {
+    final token = await storage.getToken();
+    ref.read(authTokenProvider.notifier).state = token;
+  }
 
   /// Kullanıcı adı/şifre ile giriş → token kalıcı + RAM
   Future<void> login({required String username, required String password}) async {
-    final resp =
-    await api.login(LoginRequest(username: username, password: password));
+    final resp = await api.login(LoginRequest(username: username, password: password));
     await storage.saveToken(resp.token);
-    // RAM'de de tut ki BearerInterceptor header eklesin
     ref.read(authTokenProvider.notifier).state = resp.token;
   }
 
-  /// Kayıt → OTP TTL & mailQueued dönüş bilgisini UI’ya ilet.
+  /// (Opsiyonel) Google Sign-In
+  Future<void> loginWithGoogle({required String idToken}) async {
+    final resp = await api.googleSignIn(idToken);
+    await storage.saveToken(resp.token);
+    ref.read(authTokenProvider.notifier).state = resp.token;
+  }
+
+  /// Kayıt → OTP TTL & mailQueued dönüş bilgisi UI’ya gider
   Future<Map<String, dynamic>> register({
     required String username,
     required String email,
@@ -58,5 +76,9 @@ class AuthRepository {
 
   /// Oturum yardımcıları
   Future<String?> getToken() => storage.getToken();
-  Future<void> clearToken() => storage.clearToken();
+
+  Future<void> logout() async {
+    await storage.clearToken();
+    ref.read(authTokenProvider.notifier).state = null;
+  }
 }

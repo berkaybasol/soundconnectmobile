@@ -6,9 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soundconnectmobile/core/network/dio_client.dart';
 import 'package:soundconnectmobile/core/network/api_paths.dart';
 
-import 'package:soundconnectmobile/features/auth/data/models/login_request.dart';
-import 'package:soundconnectmobile/features/auth/data/models/login_response.dart';
-import 'package:soundconnectmobile/features/auth/data/models/register_request.dart';
+import 'package:soundconnectmobile/features/auth/data/models/requests/login_request.dart';
+import 'package:soundconnectmobile/features/auth/data/models/responses/login_response.dart';
+import 'package:soundconnectmobile/features/auth/data/models/requests/register_request.dart';
 
 /// DI
 final authApiProvider = Provider<AuthApi>((ref) {

@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soundconnectmobile/features/auth/data/auth_repository.dart';
+import 'package:soundconnectmobile/core/error/ui_error_mapper.dart';
+
 
 class LoginState {
   final bool loading;
@@ -31,28 +33,8 @@ class LoginController extends StateNotifier<LoginState> {
       state = state.copyWith(loading: false);
       return true;
     } catch (e) {
-      state = state.copyWith(loading: false, error: _humanize(e));
+      state = state.copyWith(loading: false, error: UiErrorMapper.humanize(e));
       return false;
     }
-  }
-
-  String _humanize(Object e) {
-    if (e is DioException) {
-      switch (e.type) {
-        case DioExceptionType.connectionTimeout:
-        case DioExceptionType.receiveTimeout:
-        case DioExceptionType.sendTimeout:
-          return 'Bağlantı zaman aşımına uğradı';
-        case DioExceptionType.badResponse:
-          final msg = e.error?.toString();
-          return (msg != null && msg.isNotEmpty) ? msg : 'İstek başarısız';
-        case DioExceptionType.cancel:
-          return 'İstek iptal edildi';
-        case DioExceptionType.unknown:
-        default:
-          return 'Ağ hatası';
-      }
-    }
-    return e.toString();
   }
 }

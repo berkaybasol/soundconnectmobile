@@ -1,14 +1,18 @@
+// lib/features/auth/presentation/verify_code_page.dart
 import 'dart:convert';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'verify_code_controller.dart';
 import 'login_controller.dart';
-import 'package:soundconnectmobile/core/network/dio_client.dart';
 
-// Onboarding sayfaları import et
+import 'models/venue_application_draft.dart';
+import 'package:soundconnectmobile/core/error/ui_error_mapper.dart';
+import 'package:soundconnectmobile/core/network/dio_client.dart';
+import 'package:soundconnectmobile/core/network/api_paths.dart';
+
+// Onboarding sayfaları
 import 'package:soundconnectmobile/features/onboarding/musician_onboarding_page.dart';
 import 'package:soundconnectmobile/features/onboarding/listener_onboarding_page.dart';
 import 'package:soundconnectmobile/features/onboarding/organizer_onboarding_page.dart';
@@ -20,7 +24,7 @@ class VerifyCodePage extends ConsumerStatefulWidget {
   final int initialOtpTtlSeconds;
   final VoidCallback? onVerified;
 
-  final dynamic venueDraft;
+  final VenueApplicationDraft? venueDraft;
   final String? usernameForAutoLogin;
   final String? passwordForAutoLogin;
 
@@ -120,44 +124,18 @@ class _VerifyCodePageState extends ConsumerState<VerifyCodePage> {
         token = ref.read(authTokenProvider);
       }
 
-      // 2) VENUE APPLICATION CREATE
+      // 2) VENUE APPLICATION CREATE (opsiyonel)
       if (widget.venueDraft != null) {
-        Map<String, dynamic>? body;
-        final draft = widget.venueDraft;
+        final body = widget.venueDraft!.toCreateBody();
+        final dio = ref.read(dioProvider);
+        final res = await dio.post(ApiPaths.userVenueApplicationsCreate, data: body);
+        final ok = (res.data is Map) && (res.data['success'] == true);
 
-        try {
-          final dynamic d = draft;
-          final maybe = d.toCreateBody();
-          if (maybe is Map<String, dynamic>) {
-            body = maybe;
-          } else if (maybe is Map) {
-            body = Map<String, dynamic>.from(maybe);
-          }
-        } catch (_) {
-          if (draft is Map<String, dynamic>) {
-            body = draft;
-          } else if (draft is Map) {
-            body = draft.map((k, v) => MapEntry(k.toString(), v));
-          }
-        }
-
-        if (body != null) {
-          final dio = ref.read(dioProvider);
-          final res = await dio.post(
-            '/api/v1/user/venue-applications/create',
-            data: body,
-          );
-          final ok = (res.data is Map) && (res.data['success'] == true);
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(ok
-                    ? 'Mekan başvurun alındı 🎉'
-                    : (res.data?['message']?.toString() ??
-                    'Başvuru sırasında bir sorun oluştu')),
-              ),
-            );
-          }
+        if (mounted) {
+          final msg = (res.data is Map && res.data['message'] != null)
+              ? res.data['message'].toString()
+              : (ok ? 'Mekan başvurun alındı 🎉' : 'Başvuru sırasında bir sorun oluştu');
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
         }
       }
 
@@ -167,37 +145,48 @@ class _VerifyCodePageState extends ConsumerState<VerifyCodePage> {
         if (role != null) {
           switch (role) {
             case "ROLE_MUSICIAN":
-              Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (_) => const MusicianOnboardingPage()));
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const MusicianOnboardingPage()),
+              );
               break;
             case "ROLE_LISTENER":
-              Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (_) => const ListenerOnboardingPage()));
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const ListenerOnboardingPage()),
+              );
               break;
             case "ROLE_ORGANIZER":
-              Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (_) => const OrganizerOnboardingPage()));
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const OrganizerOnboardingPage()),
+              );
               break;
             case "ROLE_PRODUCER":
-              Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (_) => const ProducerOnboardingPage()));
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const ProducerOnboardingPage()),
+              );
               break;
             case "ROLE_STUDIO":
-              Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (_) => const StudioOnboardingPage()));
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const StudioOnboardingPage()),
+              );
               break;
             case "ROLE_VENUE":
-            // Venue onboarding en son yapılacak
-            // Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const VenueOnboardingPage()));
+            // Venue onboarding daha sonra eklenecek.
               break;
           }
         }
       }
 
+      // 4) Callback
+      widget.onVerified?.call();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_prettyError(e))),
+          SnackBar(content: Text(UiErrorMapper.humanize(e))),
         );
       }
     } finally {
@@ -220,32 +209,17 @@ class _VerifyCodePageState extends ConsumerState<VerifyCodePage> {
     return null;
   }
 
-  String _prettyError(Object e) {
-    if (e is DioException) {
-      final data = e.response?.data;
-      final msg = (data is Map && data['message'] != null)
-          ? data['message'].toString()
-          : e.message;
-      return msg ?? 'İşlem sırasında bir hata oluştu';
-    }
-    return e.toString();
-  }
-
   Future<void> _onResend() async {
-    await ref
-        .read(verifyCodeControllerProvider.notifier)
-        .resend(email: widget.email);
+    await ref.read(verifyCodeControllerProvider.notifier).resend(email: widget.email);
 
     final s = ref.read(verifyCodeControllerProvider);
     if (!mounted) return;
 
     if (s.message != null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(s.message!)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.message!)));
     }
     if (s.error != null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(s.error!)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.error!)));
     }
   }
 
@@ -255,8 +229,7 @@ class _VerifyCodePageState extends ConsumerState<VerifyCodePage> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    final canResend =
-        s.cooldownSeconds <= 0 && !s.resending && !s.verifying && !_busy;
+    final canResend = s.cooldownSeconds <= 0 && !s.resending && !s.verifying && !_busy;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Doğrulama Kodu')),
@@ -274,15 +247,14 @@ class _VerifyCodePageState extends ConsumerState<VerifyCodePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text('E-posta: ${widget.email}',
-                          style: theme.textTheme.bodyMedium),
+                      Text('E-posta: ${widget.email}', style: theme.textTheme.bodyMedium),
                       const SizedBox(height: 8),
 
                       if (s.otpTtlSeconds > 0)
                         Text(
                           'Kodun geçerlilik süresi: ${s.otpTtlSeconds}s',
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(color: cs.onSurface.withOpacity(.7)),
+                          style:
+                          theme.textTheme.bodySmall?.copyWith(color: cs.onSurface.withOpacity(.7)),
                         ),
                       const SizedBox(height: 16),
 
@@ -329,8 +301,8 @@ class _VerifyCodePageState extends ConsumerState<VerifyCodePage> {
                         Text(
                           'Yeniden gönder için bekle: ${s.cooldownSeconds}s',
                           textAlign: TextAlign.center,
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(color: cs.onSurface.withOpacity(.7)),
+                          style:
+                          theme.textTheme.bodySmall?.copyWith(color: cs.onSurface.withOpacity(.7)),
                         )
                       else
                         SizedBox(
@@ -351,10 +323,8 @@ class _VerifyCodePageState extends ConsumerState<VerifyCodePage> {
                         const SizedBox(height: 12),
                         Text(
                           s.error!,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: cs.error,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(color: cs.error, fontWeight: FontWeight.w600),
                         ),
                       ],
                     ],

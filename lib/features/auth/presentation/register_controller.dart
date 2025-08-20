@@ -1,7 +1,7 @@
 // lib/features/auth/presentation/register_controller.dart
-
-import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:soundconnectmobile/core/error/ui_error_mapper.dart';
 import 'package:soundconnectmobile/core/storage/secure_storage.dart';
 import 'package:soundconnectmobile/features/auth/data/auth_repository.dart';
 
@@ -28,12 +28,19 @@ class RegisterState {
 
 final registerControllerProvider =
 StateNotifierProvider<RegisterController, RegisterState>((ref) {
-  return RegisterController(ref);
+  final repo = ref.read(authRepositoryProvider);
+  final storage = ref.read(secureStorageProvider);
+  return RegisterController(repo: repo, storage: storage);
 });
 
 class RegisterController extends StateNotifier<RegisterState> {
-  final Ref _ref;
-  RegisterController(this._ref) : super(const RegisterState());
+  final AuthRepository _repo;
+  final SecureStorage _storage;
+
+  RegisterController({required AuthRepository repo, required SecureStorage storage})
+      : _repo = repo,
+        _storage = storage,
+        super(const RegisterState());
 
   void clearError() => state = state.copyWith(error: null);
 
@@ -48,8 +55,7 @@ class RegisterController extends StateNotifier<RegisterState> {
   }) async {
     state = state.copyWith(loading: true, error: null);
     try {
-      final repo = _ref.read(authRepositoryProvider);
-      final res = await repo.register(
+      final res = await _repo.register(
         username: username,
         email: email,
         password: password,
@@ -58,7 +64,7 @@ class RegisterController extends StateNotifier<RegisterState> {
       );
 
       // Seçilen rolü geçici sakla (verify sonrası yönlendirme için)
-      await _ref.read(secureStorageProvider).savePendingRegisterRole(role);
+      await _storage.savePendingRegisterRole(role);
 
       state = state.copyWith(loading: false);
       return RegisterOutcome(
@@ -67,28 +73,8 @@ class RegisterController extends StateNotifier<RegisterState> {
         mailQueued: res['mailQueued'] == true,
       );
     } catch (e) {
-      state = state.copyWith(loading: false, error: _humanize(e));
+      state = state.copyWith(loading: false, error: UiErrorMapper.humanize(e));
       return null;
     }
-  }
-
-  String _humanize(Object e) {
-    if (e is DioException) {
-      switch (e.type) {
-        case DioExceptionType.connectionTimeout:
-        case DioExceptionType.receiveTimeout:
-        case DioExceptionType.sendTimeout:
-          return 'Bağlantı zaman aşımına uğradı';
-        case DioExceptionType.badResponse:
-          final msg = e.error?.toString();
-          return (msg != null && msg.isNotEmpty) ? msg : 'İstek başarısız';
-        case DioExceptionType.cancel:
-          return 'İstek iptal edildi';
-        case DioExceptionType.unknown:
-        default:
-          return 'Ağ hatası';
-      }
-    }
-    return e.toString();
   }
 }

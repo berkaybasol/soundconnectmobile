@@ -1,8 +1,16 @@
-// lib/features/auth/presentation/login_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'login_controller.dart';
 import 'register_page.dart';
+
+// widgets
+import 'widgets/login/sc_logo.dart';
+import 'widgets/login/username_field.dart';
+import 'widgets/login/password_field.dart';
+import 'widgets/login/forgot_password_button.dart';
+import 'widgets/login/login_button.dart';
+import 'widgets/login/google_button.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -42,14 +50,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     if (ok) {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Giriş başarılı')));
-      // Profil/çağıran sayfaya geri dön
-      Navigator.of(context).pop(true); // ← kritik satır
-      // Router kullanacaksan:
-      // context.go('/home');
+      Navigator.of(context).pop(true);
+      // context.go('/home'); // router'a geçince
     } else if (s.error != null) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(s.error!)));
-      setState(() {});
+      setState(() {}); // hata yazısı tetiklemek için
     }
   }
 
@@ -71,13 +77,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    final fieldBorder = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
-      borderSide: BorderSide(color: cs.outlineVariant),
-    );
-    final fieldFocused =
-    fieldBorder.copyWith(borderSide: BorderSide(color: cs.primary, width: 2));
-
     return Scaffold(
       body: Center(
         child: SingleChildScrollView(
@@ -94,143 +93,48 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const SizedBox(height: 8),
-                      Center(
-                        child: Image.asset(
-                          'assets/images/sadece_amblem.png',
-                          width: 150,
-                          height: 150,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                      const SizedBox(height: 15),
+                      const SCLogo(),
+                      const SizedBox(height: 16),
 
-                      // Kullanıcı adı
-                      TextFormField(
+                      UsernameField(
                         controller: _username,
                         focusNode: _usernameFocus,
                         enabled: !state.loading,
-                        textInputAction: TextInputAction.next,
-                        decoration: InputDecoration(
-                          labelText: 'Kullanıcı adı',
-                          prefixIcon: const Icon(Icons.person_outline_rounded),
-                          filled: true,
-                          fillColor: Colors.white,
-                          border: fieldBorder,
-                          enabledBorder: fieldBorder,
-                          focusedBorder: fieldFocused,
-                          contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                        ),
-                        validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Zorunlu' : null,
-                        onFieldSubmitted: (_) =>
-                            FocusScope.of(context).requestFocus(_passwordFocus),
+                        onSubmitted: (_) => _passwordFocus.requestFocus(),
                       ),
 
                       const SizedBox(height: 12),
 
-                      // Şifre
-                      TextFormField(
+                      PasswordField(
                         controller: _password,
                         focusNode: _passwordFocus,
                         enabled: !state.loading,
-                        obscureText: _obscure,
-                        textInputAction: TextInputAction.done,
-                        decoration: InputDecoration(
-                          labelText: 'Şifre',
-                          prefixIcon: const Icon(Icons.lock_outline_rounded),
-                          suffixIcon: IconButton(
-                            tooltip: _obscure ? 'Şifreyi göster' : 'Şifreyi gizle',
-                            onPressed: state.loading
-                                ? null
-                                : () => setState(() => _obscure = !_obscure),
-                            icon: Icon(
-                              _obscure
-                                  ? Icons.visibility_rounded
-                                  : Icons.visibility_off_rounded,
-                            ),
-                          ),
-                          filled: true,
-                          fillColor: Colors.white,
-                          border: fieldBorder,
-                          enabledBorder: fieldBorder,
-                          focusedBorder: fieldFocused,
-                          contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                        ),
-                        validator: (v) => (v == null || v.isEmpty) ? 'Zorunlu' : null,
-                        onFieldSubmitted: (_) => _onLogin(),
+                        obscure: _obscure,
+                        onToggleObscure: state.loading
+                            ? null
+                            : () => setState(() => _obscure = !_obscure),
+                        onSubmitted: (_) => _onLogin(),
                       ),
 
-                      // Şifremi unuttum
                       Align(
                         alignment: Alignment.centerRight,
-                        child: TextButton(
+                        child: ForgotPasswordButton(
                           onPressed: state.loading ? null : _onForgotPasswordTodo,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Image.asset(
-                                'assets/icons/fish.png',
-                                width: 18,
-                                height: 18,
-                                errorBuilder: (_, __, ___) =>
-                                const Text('🐟', style: TextStyle(fontSize: 16)),
-                              ),
-                              const SizedBox(width: 6),
-                              const Text('Şifreni mi unuttun?'),
-                            ],
-                          ),
                         ),
                       ),
 
                       const SizedBox(height: 8),
 
-                      // Giriş yap
-                      SizedBox(
-                        height: 52,
-                        child: FilledButton(
-                          style: ButtonStyle(
-                            backgroundColor: WidgetStatePropertyAll(cs.onSurface),
-                            foregroundColor:
-                            const WidgetStatePropertyAll(Colors.white),
-                            shape: WidgetStatePropertyAll(
-                              RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16)),
-                            ),
-                            textStyle: WidgetStatePropertyAll(
-                              theme.textTheme.labelLarge?.copyWith(fontSize: 16),
-                            ),
-                          ),
-                          onPressed: state.loading ? null : _onLogin,
-                          child: state.loading
-                              ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white),
-                          )
-                              : const Text('Giriş yap'),
-                        ),
+                      LoginButton(
+                        loading: state.loading,
+                        onPressed: state.loading ? null : _onLogin,
                       ),
 
                       const SizedBox(height: 12),
 
-                      // Google ile devam et
-                      SizedBox(
-                        height: 48,
-                        child: OutlinedButton.icon(
-                          onPressed: state.loading ? null : _onGoogleTodo,
-                          icon: Image.asset(
-                            'assets/icons/google.png',
-                            width: 18,
-                            height: 18,
-                            fit: BoxFit.contain,
-                            errorBuilder: (_, __, ___) =>
-                            const Icon(Icons.login, size: 18),
-                          ),
-                          label: const Text('Google ile devam et'),
-                        ),
+                      GoogleButton(
+                        loading: state.loading,
+                        onPressed: state.loading ? null : _onGoogleTodo,
                       ),
 
                       const SizedBox(height: 18),
