@@ -1,29 +1,37 @@
+// lib/core/routing/app_router.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:soundconnectmobile/features/auth/presentation/login_page.dart';
+import 'package:soundconnectmobile/features/home/home_shell.dart';
 
 final appRouter = GoRouter(
-  // Şimdilik login'den başla; bir sonraki adımda token varsa Home'a atacağız.
-  initialLocation: '/login',
+  // Debug için direkt açılacak sayfa:
+  // → Müzisyen Backstage’i görmek için: '/debug-musician'
+  // → Dinleyici MainStage’i görmek için: '/debug-listener'
+  // → Gerçek akış için (token/role ile): '/home'
+  initialLocation: '/debug-backstage',
+
   routes: [
+    // Müzisyen (Backstage)
     GoRoute(
-      path: '/login',
-      builder: (context, state) => const LoginPage(),
+      path: '/debug-backstage',
+      builder: (context, state) => BackstageHomePage(roles: {'ROLE_MUSICIAN' }), // diger roller eklencek
     ),
+
+    // Dinleyici (MainStage)
+    GoRoute(
+      path: '/debug-listener',
+      builder: (context, state) => const MainStageHomePage(),
+    ),
+
+    // Kapı: JWT role'lerine göre MainStage/Backstage seçer
     GoRoute(
       path: '/home',
-      builder: (context, state) => const _HomePage(),
+      builder: (context, state) => const HomeGate(),
     ),
   ],
+
+  errorBuilder: (context, state) => Scaffold(
+    appBar: AppBar(title: const Text('Rota bulunamadı')),
+    body: Center(child: Text(state.error?.toString() ?? 'Bilinmeyen rota')),
+  ),
 );
-
-class _HomePage extends StatelessWidget {
-  const _HomePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text('SoundConnect Mobile • Home')),
-    );
-  }
-}
