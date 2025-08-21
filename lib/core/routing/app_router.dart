@@ -5,7 +5,7 @@ import 'package:soundconnectmobile/features/home/presentation/home_gate.dart';
 import 'package:soundconnectmobile/features/home/presentation/mainstage/mainstage_home_page.dart';
 import 'package:soundconnectmobile/features/home/presentation/backstage/backstage_home_page.dart';
 
-import 'package:soundconnectmobile/features/profile/musician_profile_page.dart';
+import 'package:soundconnectmobile/features/profile/presentation/pages/musician_profile_page.dart';
 
 
 final appRouter = GoRouter(
