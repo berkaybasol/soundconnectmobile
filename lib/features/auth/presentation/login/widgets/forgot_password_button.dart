@@ -6,6 +6,8 @@ class ForgotPasswordButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return TextButton(
       onPressed: onPressed,
       child: Row(
@@ -15,10 +17,14 @@ class ForgotPasswordButton extends StatelessWidget {
             'assets/icons/fish.png',
             width: 18,
             height: 18,
-            errorBuilder: (_, __, ___) => const Text('🐟', style: TextStyle(fontSize: 16)),
+            errorBuilder: (_, __, ___) =>
+            const Text('🐟', style: TextStyle(fontSize: 16)),
           ),
           const SizedBox(width: 6),
-          const Text('Şifreni mi unuttun?'),
+          Text(
+            'Şifreni mi unuttun?',
+            style: TextStyle(color: cs.secondary), // 👈 sadece metin şeftali
+          ),
         ],
       ),
     );

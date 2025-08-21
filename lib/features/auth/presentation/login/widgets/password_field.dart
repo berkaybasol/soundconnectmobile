@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'auth_styles.dart';
 
 class PasswordField extends StatelessWidget {
   final TextEditingController controller;
@@ -26,13 +27,16 @@ class PasswordField extends StatelessWidget {
       enabled: enabled,
       obscureText: obscure,
       textInputAction: TextInputAction.done,
-      decoration: InputDecoration(
+      decoration: AuthStyles.decoration(
+        context: context,
         labelText: 'Şifre',
         prefixIcon: const Icon(Icons.lock_outline_rounded),
         suffixIcon: IconButton(
           tooltip: obscure ? 'Şifreyi göster' : 'Şifreyi gizle',
           onPressed: onToggleObscure,
-          icon: Icon(obscure ? Icons.visibility_rounded : Icons.visibility_off_rounded),
+          icon: Icon(
+            obscure ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+          ),
         ),
       ),
       validator: (v) => (v == null || v.isEmpty) ? 'Zorunlu' : null,

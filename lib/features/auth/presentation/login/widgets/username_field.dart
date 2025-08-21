@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'auth_styles.dart';
 
 class UsernameField extends StatelessWidget {
   final TextEditingController controller;
@@ -21,9 +22,10 @@ class UsernameField extends StatelessWidget {
       focusNode: focusNode,
       enabled: enabled,
       textInputAction: TextInputAction.next,
-      decoration: const InputDecoration(
+      decoration: AuthStyles.decoration(
+        context: context,
         labelText: 'Kullanıcı adı',
-        prefixIcon: Icon(Icons.person_outline_rounded),
+        prefixIcon: const Icon(Icons.person_outline_rounded),
       ),
       validator: (v) => (v == null || v.trim().isEmpty) ? 'Zorunlu' : null,
       onFieldSubmitted: onSubmitted,
