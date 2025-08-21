@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'login_controller.dart';
-import 'register_page.dart';
+import '../register/register_page.dart';
 
 // widgets
-import 'widgets/login/sc_logo.dart';
-import 'widgets/login/username_field.dart';
-import 'widgets/login/password_field.dart';
-import 'widgets/login/forgot_password_button.dart';
-import 'widgets/login/login_button.dart';
-import 'widgets/login/google_button.dart';
+import 'widgets/sc_logo.dart';
+import 'widgets/username_field.dart';
+import 'widgets/password_field.dart';
+import 'widgets/forgot_password_button.dart';
+import 'widgets/login_button.dart';
+import 'widgets/google_button.dart';
+
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});

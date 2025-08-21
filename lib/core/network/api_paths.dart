@@ -28,6 +28,7 @@ class ApiPaths {
 
   // ---- Venue Applications ----
   static const String userVenueApplicationsCreate = '/api/v1/user/venue-applications/create';
+
 }
 
 

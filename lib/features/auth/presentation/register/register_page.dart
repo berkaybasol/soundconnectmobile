@@ -2,19 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'register_controller.dart';
-import 'verify_code_page.dart';
-import 'models/venue_application_draft.dart';
+import '../verify/verify_code_page.dart';
+import '../../../venue_app/data/models/requests/venue_application_draft.dart';
 
 // Location
 import 'package:soundconnectmobile/features/location/presentation/location_controller.dart';
 
 // widgets
-import 'widgets/register/register_header_logo.dart';
-import 'widgets/register/username_email_fields.dart';
-import 'widgets/register/password_fields.dart';
-import 'widgets/register/role_dropdown.dart';
-import 'widgets/register/venue_form.dart';
-import 'widgets/register/register_footer.dart';
+import 'widgets/register_header_logo.dart';
+import 'widgets/username_email_fields.dart';
+import 'widgets/password_fields.dart';
+import 'widgets/role_dropdown.dart';
+import 'widgets/venue_form.dart';
+import 'widgets/register_footer.dart';
 
 class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
