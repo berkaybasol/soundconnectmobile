@@ -13,6 +13,7 @@ final talkerProvider = Provider<Talker>((ref) => TalkerFlutter.init());
 
 /// Bearer Interceptor
 class BearerInterceptor extends Interceptor {
+
   final Ref ref;
   final Talker talker;
   BearerInterceptor(this.ref, this.talker);
@@ -51,6 +52,9 @@ final dioProvider = Provider<Dio>((ref) {
       validateStatus: (code) => code != null && code >= 200 && code < 600,
     ),
   );
+
+  dio.interceptors.add(BearerInterceptor(ref, ref.read(talkerProvider)));
+  return dio;
 
   // DEBUG: Çalışan BASE_URL’i logla
   debugPrint('BASE_URL is: ${Env.baseUrl}');
