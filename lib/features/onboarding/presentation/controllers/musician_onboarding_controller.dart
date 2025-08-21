@@ -1,43 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:soundconnectmobile/core/network/dio_client.dart';
+import 'package:soundconnectmobile/features/onboarding/data/models/requests/musician_profile_save_request.dart';
 
-
-/// Profil save request DTO
-class MusicianProfileSaveRequest {
-  final String? stageName;
-  final String? description;
-  final String? profilePicture;
-  final String? instagramUrl;
-  final String? youtubeUrl;
-  final String? soundcloudUrl;
-  final String? spotifyEmbedUrl;
-  final List<String> instrumentIds;
-
-  MusicianProfileSaveRequest({
-    this.stageName,
-    this.description,
-    this.profilePicture,
-    this.instagramUrl,
-    this.youtubeUrl,
-    this.soundcloudUrl,
-    this.spotifyEmbedUrl,
-    this.instrumentIds = const [],
-  });
-
-  Map<String, dynamic> toJson() => {
-    "stageName": stageName,
-    "description": description,
-    "profilePicture": profilePicture,
-    "instagramUrl": instagramUrl,
-    "youtubeUrl": youtubeUrl,
-    "soundcloudUrl": soundcloudUrl,
-    "spotifyEmbedUrl": spotifyEmbedUrl,
-    "instrumentIds": instrumentIds,
-  };
-}
-
-/// State: yükleniyor / hata / başarılı
 class MusicianOnboardingState {
   final bool loading;
   final String? error;
@@ -62,7 +27,6 @@ class MusicianOnboardingState {
   }
 }
 
-/// Notifier
 class MusicianOnboardingController
     extends StateNotifier<MusicianOnboardingState> {
   final Dio _dio;
@@ -99,9 +63,8 @@ class MusicianOnboardingController
   }
 }
 
-/// Provider
 final musicianOnboardingControllerProvider = StateNotifierProvider<
     MusicianOnboardingController, MusicianOnboardingState>((ref) {
-  final dio = ref.watch(dioProvider); // senin mevcut global dio provider’ın
+  final dio = ref.watch(dioProvider);
   return MusicianOnboardingController(dio);
 });

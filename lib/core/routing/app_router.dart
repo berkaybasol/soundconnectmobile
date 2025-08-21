@@ -1,7 +1,10 @@
 // lib/core/routing/app_router.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:soundconnectmobile/features/home/home_shell.dart';
+import 'package:soundconnectmobile/features/home/presentation/home_gate.dart';
+import 'package:soundconnectmobile/features/home/presentation/mainstage/mainstage_home_page.dart';
+import 'package:soundconnectmobile/features/home/presentation/backstage/backstage_home_page.dart';
+
 import 'package:soundconnectmobile/features/profile/musician_profile_page.dart';
 
 

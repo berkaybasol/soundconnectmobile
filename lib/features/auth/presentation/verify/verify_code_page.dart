@@ -12,11 +12,11 @@ import 'package:soundconnectmobile/core/network/dio_client.dart';
 import 'package:soundconnectmobile/core/network/api_paths.dart';
 
 // Onboarding sayfaları
-import 'package:soundconnectmobile/features/onboarding/musician_onboarding_page.dart';
-import 'package:soundconnectmobile/features/onboarding/listener_onboarding_page.dart';
-import 'package:soundconnectmobile/features/onboarding/organizer_onboarding_page.dart';
-import 'package:soundconnectmobile/features/onboarding/producer_onboarding_page.dart';
-import 'package:soundconnectmobile/features/onboarding/studio_onboarding_page.dart';
+import 'package:soundconnectmobile/features/onboarding/presentation/pages/musician_onboarding_page.dart';
+import 'package:soundconnectmobile/features/onboarding/presentation/pages/listener_onboarding_page.dart';
+import 'package:soundconnectmobile/features/onboarding/presentation/pages/organizer_onboarding_page.dart';
+import 'package:soundconnectmobile/features/onboarding/presentation/pages/producer_onboarding_page.dart';
+import 'package:soundconnectmobile/features/onboarding/presentation/pages/studio_onboarding_page.dart';
 
 // widgets
 import 'widgets/verify_header_info.dart';

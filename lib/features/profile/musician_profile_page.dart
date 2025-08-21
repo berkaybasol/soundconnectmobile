@@ -11,7 +11,7 @@ import 'package:soundconnectmobile/core/network/dio_client.dart';
 
 // App içi sayfalar
 import 'package:soundconnectmobile/features/auth/presentation/login/login_page.dart';
-import 'package:soundconnectmobile/features/onboarding/musician_onboarding_page.dart';
+import 'package:soundconnectmobile/features/onboarding/presentation/pages/musician_onboarding_page.dart';
 
 /// Basit hata tipleri
 class _AuthException implements Exception {

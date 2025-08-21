@@ -1,61 +1,13 @@
-// lib/features/onboarding/musician_onboarding_page.dart
-import 'dart:convert';
-import 'package:dio/dio.dart';
+// lib/features/onboarding/presentation/pages/musician_onboarding_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// senin mevcut global dio provider'ını kullanıyoruz
-import 'package:soundconnectmobile/core/network/dio_client.dart';
+import 'package:soundconnectmobile/features/home/presentation/home_gate.dart';
+import '../controllers/musician_onboarding_controller.dart';
+import '../providers/instrument_providers.dart';
+import '../../data/models/instrument.dart';
+import '../../data/models/requests/musician_profile_save_request.dart';
 
-import 'package:soundconnectmobile/features/home/home_shell.dart';
-
-// senin mevcut controller dosyan (daha önce attığın)
-import 'package:soundconnectmobile/features/onboarding/musician_onboarding_controller.dart';
-
-/// ---------------- DTO ----------------
-class Instrument {
-  final String id;
-  final String name;
-  Instrument({required this.id, required this.name});
-
-  factory Instrument.fromJson(Map<String, dynamic> json) =>
-      Instrument(id: json['id'].toString(), name: (json['name'] ?? '').toString());
-}
-
-/// ---------------- Repository ----------------
-class InstrumentRepository {
-  final Dio _dio;
-  InstrumentRepository(this._dio);
-
-  Future<List<Instrument>> getAll() async {
-    final res = await _dio.get('/api/v1/user/instruments');
-    if ((res.statusCode ?? 0) != 200 || res.data is! Map) {
-      throw DioException(
-        requestOptions: res.requestOptions,
-        response: res,
-        error: 'Enstrüman listesi alınamadı',
-      );
-    }
-    final list = (res.data['data'] as List?) ?? const [];
-    return list
-        .map((e) => Instrument.fromJson(Map<String, dynamic>.from(e as Map)))
-        .toList();
-  }
-}
-
-/// ---------------- Providers ----------------
-final instrumentRepositoryProvider = Provider<InstrumentRepository>((ref) {
-  final dio = ref.watch(dioProvider);
-  return InstrumentRepository(dio);
-});
-
-final instrumentListProvider = FutureProvider<List<Instrument>>((ref) async {
-  final repo = ref.watch(instrumentRepositoryProvider);
-  return repo.getAll();
-});
-
-/// ---------------- Page ----------------
-/// Onboarding: SADE—sadece sahne adı + enstrüman seçimi
 class MusicianOnboardingPage extends ConsumerStatefulWidget {
   const MusicianOnboardingPage({super.key});
 
@@ -75,12 +27,8 @@ class _MusicianOnboardingPageState extends ConsumerState<MusicianOnboardingPage>
     super.dispose();
   }
 
-  Future<void> _openInstrumentPicker({
-    required List<Instrument> instruments,
-  }) async {
+  Future<void> _openInstrumentPicker({required List<Instrument> instruments}) async {
     final cs = Theme.of(context).colorScheme;
-
-    // geçici state (bottom sheet kapatılınca asıla yazacağız)
     final Set<String> temp = {..._selectedInstrumentIds};
     String query = '';
 
@@ -88,7 +36,7 @@ class _MusicianOnboardingPageState extends ConsumerState<MusicianOnboardingPage>
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: cs.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -110,9 +58,7 @@ class _MusicianOnboardingPageState extends ConsumerState<MusicianOnboardingPage>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: 36,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 12),
+                    width: 36, height: 4, margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
                       color: cs.outlineVariant,
                       borderRadius: BorderRadius.circular(2),
@@ -120,8 +66,6 @@ class _MusicianOnboardingPageState extends ConsumerState<MusicianOnboardingPage>
                   ),
                   Text('Enstrüman Seç', style: Theme.of(ctx).textTheme.titleMedium),
                   const SizedBox(height: 12),
-
-                  // arama
                   TextField(
                     decoration: const InputDecoration(
                       prefixIcon: Icon(Icons.search),
@@ -130,13 +74,10 @@ class _MusicianOnboardingPageState extends ConsumerState<MusicianOnboardingPage>
                     onChanged: (v) => setSheetState(() => query = v),
                   ),
                   const SizedBox(height: 10),
-
-                  // seçili chipler
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Wrap(
-                      spacing: 6,
-                      runSpacing: -6,
+                      spacing: 6, runSpacing: -6,
                       children: [
                         for (final id in temp)
                           _InstrumentChip(
@@ -147,8 +88,6 @@ class _MusicianOnboardingPageState extends ConsumerState<MusicianOnboardingPage>
                     ),
                   ),
                   const SizedBox(height: 10),
-
-                  // liste
                   Flexible(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxHeight: 420),
@@ -183,7 +122,6 @@ class _MusicianOnboardingPageState extends ConsumerState<MusicianOnboardingPage>
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 12),
                   Row(
                     children: [
@@ -233,18 +171,13 @@ class _MusicianOnboardingPageState extends ConsumerState<MusicianOnboardingPage>
     );
 
     await ref.read(musicianOnboardingControllerProvider.notifier).updateProfile(req);
-
-    // <- ÖNEMLİ: await’ten sonra tekrar mounted kontrolü
     if (!mounted) return;
 
     final s = ref.read(musicianOnboardingControllerProvider);
     if (s.success) {
-      // İsteğe bağlı: başarı mesajı
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profil güncellendi 🎉')),
       );
-
-      // <-- SADECE BU NAVİGASYON KALSIN (maybePop vs. yok)
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const HomeGate()),
             (route) => false,
@@ -269,19 +202,15 @@ class _MusicianOnboardingPageState extends ConsumerState<MusicianOnboardingPage>
           key: _formKey,
           child: Column(
             children: [
-              // SADE: sadece sahne adı
               TextFormField(
                 controller: _stageName,
                 decoration: const InputDecoration(
                   labelText: 'Sahne Adı',
                   prefixIcon: Icon(Icons.music_note),
                 ),
-                validator: (v) =>
-                (v == null || v.isEmpty) ? 'Sahne adı zorunlu' : null,
+                validator: (v) => (v == null || v.isEmpty) ? 'Sahne adı zorunlu' : null,
               ),
               const SizedBox(height: 16),
-
-              // Enstrüman seçimi (backend’den)
               listState.when(
                 data: (instruments) {
                   return InkWell(
@@ -292,24 +221,18 @@ class _MusicianOnboardingPageState extends ConsumerState<MusicianOnboardingPage>
                       isEmpty: _selectedInstrumentIds.isEmpty,
                       decoration: InputDecoration(
                         labelText: 'Enstrümanlar',
-                        hintText: 'Seçiniz', // ← placeholder artık burada
+                        hintText: 'Seçiniz',
                         prefixIcon: const Icon(Icons.piano),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        // odak rengi temanın primary’si (pembe) olacak şekilde:
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: Theme.of(context).colorScheme.primary,
-                            width: 2,
-                          ),
+                          borderSide: BorderSide(color: cs.primary, width: 2),
                         ),
                       ),
-                      // BOŞKEN child=null (hint görünsün, overlap olmasın)
                       child: _selectedInstrumentIds.isEmpty
                           ? null
                           : Wrap(
-                        spacing: 6,
-                        runSpacing: -6,
+                        spacing: 6, runSpacing: -6,
                         children: _selectedInstrumentIds.map((id) {
                           final name = instruments.firstWhere((x) => x.id == id).name;
                           return _InstrumentChip(
@@ -329,15 +252,10 @@ class _MusicianOnboardingPageState extends ConsumerState<MusicianOnboardingPage>
                 ),
                 error: (e, _) => Text('Enstrümanlar yüklenemedi: $e'),
               ),
-
               const SizedBox(height: 24),
               SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: FilledButton(
-                  onPressed: _onSave,
-                  child: const Text('Kaydet'),
-                ),
+                width: double.infinity, height: 48,
+                child: FilledButton(onPressed: _onSave, child: const Text('Kaydet')),
               ),
             ],
           ),
