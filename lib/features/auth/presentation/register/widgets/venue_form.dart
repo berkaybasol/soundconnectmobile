@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:soundconnectmobile/features/auth/presentation/login/widgets/auth_styles.dart';
 import 'package:soundconnectmobile/features/location/data/models/id_name.dart';
 
 class VenueForm extends StatelessWidget {
@@ -56,18 +57,22 @@ class VenueForm extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Mekan Başvurusu',
-              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+          Text(
+            'Mekan Başvurusu',
+            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 12),
 
           TextFormField(
             controller: venueName,
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
+            decoration: AuthStyles.decoration(
+              context: context,
               labelText: 'Mekan adı',
-              prefixIcon: Icon(Icons.storefront_outlined),
-            ),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Mekan adı zorunludur' : null,
+              prefixIcon: const Icon(Icons.storefront_outlined),
+            ).copyWith(fillColor: Colors.transparent),
+            validator: (v) =>
+            (v == null || v.trim().isEmpty) ? 'Mekan adı zorunludur' : null,
           ),
           const SizedBox(height: 10),
 
@@ -75,23 +80,30 @@ class VenueForm extends StatelessWidget {
             controller: venueAddress,
             maxLines: 2,
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
+            decoration: AuthStyles.decoration(
+              context: context,
               labelText: 'Adres',
-              prefixIcon: Icon(Icons.location_on_outlined),
-            ),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Adres zorunludur' : null,
+              prefixIcon: const Icon(Icons.location_on_outlined),
+            ).copyWith(fillColor: Colors.transparent),
+            validator: (v) =>
+            (v == null || v.trim().isEmpty) ? 'Adres zorunludur' : null,
           ),
           const SizedBox(height: 10),
 
           DropdownButtonFormField<String>(
             value: selectedCityId,
             isExpanded: true,
-            decoration: const InputDecoration(
+            decoration: AuthStyles.decoration(
+              context: context,
               labelText: 'Şehir',
-              prefixIcon: Icon(Icons.location_city_outlined),
-            ),
-            hint: loadingCities ? const Text('Yükleniyor...') : const Text('Şehir seçin'),
-            items: cities.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))).toList(),
+              prefixIcon: const Icon(Icons.location_city_outlined),
+            ).copyWith(fillColor: Colors.transparent),
+            hint: loadingCities
+                ? const Text('Yükleniyor...')
+                : const Text('Şehir seçin'),
+            items: cities
+                .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
+                .toList(),
             onChanged: loadingCities ? null : onSelectCity,
             validator: (v) => v == null ? 'Şehir seçin' : null,
           ),
@@ -100,15 +112,21 @@ class VenueForm extends StatelessWidget {
           DropdownButtonFormField<String>(
             value: selectedDistrictId,
             isExpanded: true,
-            decoration: const InputDecoration(
+            decoration: AuthStyles.decoration(
+              context: context,
               labelText: 'İlçe',
-              prefixIcon: Icon(Icons.map_outlined),
-            ),
+              prefixIcon: const Icon(Icons.map_outlined),
+            ).copyWith(fillColor: Colors.transparent),
             hint: (selectedCityId == null)
                 ? const Text('Önce şehir seçin')
-                : (loadingDistricts ? const Text('Yükleniyor...') : const Text('İlçe seçin')),
-            items: districts.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name))).toList(),
-            onChanged: (selectedCityId == null || loadingDistricts) ? null : onSelectDistrict,
+                : (loadingDistricts
+                ? const Text('Yükleniyor...')
+                : const Text('İlçe seçin')),
+            items: districts
+                .map((d) => DropdownMenuItem(value: d.id, child: Text(d.name)))
+                .toList(),
+            onChanged:
+            (selectedCityId == null || loadingDistricts) ? null : onSelectDistrict,
             validator: (v) => v == null ? 'İlçe seçin' : null,
           ),
           const SizedBox(height: 10),
@@ -116,10 +134,11 @@ class VenueForm extends StatelessWidget {
           DropdownButtonFormField<String>(
             value: selectedNeighborhoodId,
             isExpanded: true,
-            decoration: const InputDecoration(
+            decoration: AuthStyles.decoration(
+              context: context,
               labelText: 'Mahalle (opsiyonel)',
-              prefixIcon: Icon(Icons.place_outlined),
-            ),
+              prefixIcon: const Icon(Icons.place_outlined),
+            ).copyWith(fillColor: Colors.transparent),
             hint: (selectedDistrictId == null)
                 ? const Text('Önce ilçe seçin')
                 : (loadingNeighborhoods
@@ -128,8 +147,9 @@ class VenueForm extends StatelessWidget {
             items: neighborhoods
                 .map((n) => DropdownMenuItem(value: n.id, child: Text(n.name)))
                 .toList(),
-            onChanged:
-            (selectedDistrictId == null || loadingNeighborhoods) ? null : onSelectNeighborhood,
+            onChanged: (selectedDistrictId == null || loadingNeighborhoods)
+                ? null
+                : onSelectNeighborhood,
           ),
 
           if (errorText != null) ...[

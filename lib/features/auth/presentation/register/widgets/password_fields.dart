@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:soundconnectmobile/features/auth/presentation/login/widgets/auth_styles.dart';
 
 class PasswordFields extends StatelessWidget {
   final TextEditingController password;
@@ -34,15 +35,18 @@ class PasswordFields extends StatelessWidget {
           focusNode: passwordFocus,
           obscureText: obscure1,
           textInputAction: TextInputAction.next,
-          decoration: InputDecoration(
+          decoration: AuthStyles.decoration(
+            context: context,
             labelText: 'Şifre',
             prefixIcon: const Icon(Icons.lock_outline_rounded),
             suffixIcon: IconButton(
               tooltip: obscure1 ? 'Şifreyi göster' : 'Şifreyi gizle',
               onPressed: onToggle1,
-              icon: Icon(obscure1 ? Icons.visibility_rounded : Icons.visibility_off_rounded),
+              icon: Icon(
+                obscure1 ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+              ),
             ),
-          ),
+          ).copyWith(fillColor: Colors.transparent),
           validator: (v) => (v == null || v.isEmpty) ? 'Zorunlu' : null,
         ),
         const SizedBox(height: 12),
@@ -53,15 +57,18 @@ class PasswordFields extends StatelessWidget {
           focusNode: rePasswordFocus,
           obscureText: obscure2,
           textInputAction: TextInputAction.done,
-          decoration: InputDecoration(
+          decoration: AuthStyles.decoration(
+            context: context,
             labelText: 'Şifre (tekrar)',
             prefixIcon: const Icon(Icons.lock_reset_rounded),
             suffixIcon: IconButton(
               tooltip: obscure2 ? 'Şifreyi göster' : 'Şifreyi gizle',
               onPressed: onToggle2,
-              icon: Icon(obscure2 ? Icons.visibility_rounded : Icons.visibility_off_rounded),
+              icon: Icon(
+                obscure2 ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+              ),
             ),
-          ),
+          ).copyWith(fillColor: Colors.transparent),
           validator: (v) {
             if (v == null || v.isEmpty) return 'Zorunlu';
             if (v != password.text) return 'Şifreler uyuşmuyor';

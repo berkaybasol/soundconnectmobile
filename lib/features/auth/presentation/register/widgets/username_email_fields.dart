@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:soundconnectmobile/features/auth/presentation/login/widgets/auth_styles.dart';
 
 class UsernameEmailFields extends StatelessWidget {
   final TextEditingController username;
@@ -26,10 +27,12 @@ class UsernameEmailFields extends StatelessWidget {
           focusNode: usernameFocus,
           textInputAction: TextInputAction.next,
           autofillHints: const [AutofillHints.username],
-          decoration: const InputDecoration(
+          decoration: AuthStyles.decoration(
+            context: context,
             labelText: 'Kullanıcı adı',
-            hintText: 'kullanici_adi',
-            prefixIcon: Icon(Icons.person_outline_rounded),
+            prefixIcon: const Icon(Icons.person_outline_rounded),
+          ).copyWith(
+            fillColor: Colors.transparent, // 👈 sadece burada override
           ),
           validator: (v) => (v == null || v.trim().isEmpty) ? 'Zorunlu' : null,
           onFieldSubmitted: (_) => onUsernameSubmitted(),
@@ -43,10 +46,12 @@ class UsernameEmailFields extends StatelessWidget {
           textInputAction: TextInputAction.next,
           keyboardType: TextInputType.emailAddress,
           autofillHints: const [AutofillHints.email],
-          decoration: const InputDecoration(
+          decoration: AuthStyles.decoration(
+            context: context,
             labelText: 'E-posta',
-            hintText: 'ornek@mail.com',
-            prefixIcon: Icon(Icons.alternate_email_rounded),
+            prefixIcon: const Icon(Icons.alternate_email_rounded),
+          ).copyWith(
+            fillColor: Colors.transparent, // 👈 burası da saydam
           ),
           validator: (v) {
             if (v == null || v.trim().isEmpty) return 'Zorunlu';
