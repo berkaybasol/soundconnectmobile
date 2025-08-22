@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart'; // 🔸 eklendi
 
 import 'login_controller.dart';
 import '../register/register_page.dart';
@@ -11,7 +12,6 @@ import 'widgets/password_field.dart';
 import 'widgets/forgot_password_button.dart';
 import 'widgets/login_button.dart';
 import 'widgets/google_button.dart';
-
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -51,8 +51,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     if (ok) {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Giriş başarılı')));
-      Navigator.of(context).pop(true);
-      // context.go('/home'); // router'a geçince
+      // 🔸 Router ile hedefe gönder (guard zinciriyle uyumlu)
+      context.go('/backstage/musician/profile');
     } else if (s.error != null) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(s.error!)));

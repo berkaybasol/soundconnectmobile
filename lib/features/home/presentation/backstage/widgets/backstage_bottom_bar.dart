@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class BackstageBottomBar extends StatelessWidget {
   const BackstageBottomBar({super.key});
@@ -27,9 +28,7 @@ class BackstageBottomBar extends StatelessWidget {
                 _BottomIconButton(
                   icon: Icons.chat_bubble_outline_rounded, label: 'Mesajlar', toast: 'Mesajlar (TODO)',
                 ),
-                _BottomIconButton(
-                  icon: Icons.person_outline_rounded, label: 'Profil', toast: 'Profil (TODO)',
-                ),
+                _ProfileButton(), // ← sadece burası değişti
               ],
             ),
           ],
@@ -103,6 +102,32 @@ class _BottomIconButton extends StatelessWidget {
             Icon(icon, color: cs.onSurface),
             const SizedBox(height: 4),
             Text(label, style: TextStyle(color: cs.onSurface.withOpacity(.7), fontSize: 12)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// === YENİ: Profil butonu (navigasyonlu) ===
+class _ProfileButton extends StatelessWidget {
+  const _ProfileButton();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: () => context.push('/backstage/musician/profile'),
+      splashColor: cs.onSurface.withOpacity(.08),
+      highlightColor: cs.onSurface.withOpacity(.06),
+      child: const SizedBox(
+        width: 92, height: 66,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.person_outline_rounded),
+            SizedBox(height: 4),
+            Text('Profil', style: TextStyle(fontSize: 12)),
           ],
         ),
       ),

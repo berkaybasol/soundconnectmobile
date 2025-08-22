@@ -120,7 +120,8 @@ class _VerifyCodePageState extends ConsumerState<VerifyCodePage> {
       if (widget.venueDraft != null) {
         final body = widget.venueDraft!.toCreateBody();
         final dio = ref.read(dioProvider);
-        final res = await dio.post(ApiPaths.userVenueApplicationsCreate, data: body);
+        // DÜZELTİLDİ: userVenueApplicationsCreate -> venueAppCreate
+        final res = await dio.post(ApiPaths.venueAppCreate, data: body);
         final ok = (res.data is Map) && (res.data['success'] == true);
         if (mounted) {
           final msg = (res.data is Map && res.data['message'] != null)
